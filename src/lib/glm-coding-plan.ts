@@ -73,7 +73,17 @@ export async function queryGlmCodingPlanQuota(
             resetDate && Number.isFinite(resetDate.valueOf()) && resetDate.valueOf() > 0
               ? resetDate.toISOString()
               : undefined;
-          const window = { percentRemaining: clampPercent(100 - limit.percentage), resetTimeIso };
+          const hasExactCreditValues =
+            limit.type === "CREDIT_LIMIT" &&
+            typeof limit.usage === "number" &&
+            Number.isFinite(limit.usage) &&
+            limit.usage > 0 &&
+            typeof limit.currentValue === "number" &&
+            Number.isFinite(limit.currentValue);
+          const percentRemaining = hasExactCreditValues
+            ? clampPercent(((limit.usage - limit.currentValue) / limit.usage) * 100)
+            : clampPercent(100 - limit.percentage);
+          const window = { percentRemaining, resetTimeIso };
 
           const isQuotaWindow = limit.type === "TOKENS_LIMIT" || limit.type === "CREDIT_LIMIT";
           if (isQuotaWindow && limit.unit === 3) windows.fiveHour = window;
